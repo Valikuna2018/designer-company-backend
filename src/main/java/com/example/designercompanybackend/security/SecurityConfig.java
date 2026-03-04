@@ -32,6 +32,8 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/admin/site-info/**").hasRole("ADMIN")
 
+                .requestMatchers("/api/admin/articles/**").hasRole("ADMIN")
+
                 .anyRequest().permitAll()
         );
 

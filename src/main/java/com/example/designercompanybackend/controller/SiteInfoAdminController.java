@@ -1,9 +1,8 @@
 package com.example.designercompanybackend.controller;
 
-
 import com.example.designercompanybackend.dto.SiteInfoDto;
 import com.example.designercompanybackend.model.SiteInfo;
-import com.example.designercompanybackend.repository.SiteInfoRepository;
+import com.example.designercompanybackend.service.SiteInfoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,35 +11,27 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class SiteInfoAdminController {
 
-    private final SiteInfoRepository repo;
+    private final SiteInfoService siteInfoService;
 
-    public SiteInfoAdminController(SiteInfoRepository repo) {
-        this.repo = repo;
+    public SiteInfoAdminController(SiteInfoService siteInfoService) {
+        this.siteInfoService = siteInfoService;
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody SiteInfoDto dto) {
-        String key = dto.getKeyName().toUpperCase();
-        if (repo.existsByKeyName(key)) {
-            return ResponseEntity.badRequest().body("Key already exists");
-        }
-        SiteInfo saved = repo.save(new SiteInfo(key, dto.getValue()));
+        SiteInfo saved = siteInfoService.create(dto);
         return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{keyName}")
-    public ResponseEntity<?> update(@PathVariable String keyName, @RequestBody SiteInfoDto dto) {
-        String key = keyName.toUpperCase();
-        SiteInfo info = repo.findByKeyName(key).orElse(new SiteInfo(key, null));
-        info.setValue(dto.getValue());
-        return ResponseEntity.ok(repo.save(info));
+    public ResponseEntity<?> update(@PathVariable String keyName,
+                                    @RequestBody SiteInfoDto dto) {
+        return ResponseEntity.ok(siteInfoService.update(keyName, dto));
     }
 
     @DeleteMapping("/{keyName}")
     public ResponseEntity<?> delete(@PathVariable String keyName) {
-        String key = keyName.toUpperCase();
-        SiteInfo info = repo.findByKeyName(key).orElseThrow();
-        repo.delete(info);
+        siteInfoService.delete(keyName);
         return ResponseEntity.ok("Deleted");
     }
 }

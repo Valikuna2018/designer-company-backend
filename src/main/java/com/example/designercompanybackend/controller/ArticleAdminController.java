@@ -2,7 +2,7 @@ package com.example.designercompanybackend.controller;
 
 import com.example.designercompanybackend.dto.ArticleDto;
 import com.example.designercompanybackend.model.Article;
-import com.example.designercompanybackend.repository.ArticleRepository;
+import com.example.designercompanybackend.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,68 +13,40 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class ArticleAdminController {
 
-    private final ArticleRepository repo;
+    private final ArticleService articleService;
 
-    public ArticleAdminController(ArticleRepository repo) {
-        this.repo = repo;
+    public ArticleAdminController(ArticleService articleService) {
+        this.articleService = articleService;
     }
 
     @GetMapping
     public List<Article> listAll() {
-        return repo.findAll();
+        return articleService.listAll();
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody ArticleDto dto) {
-        if (dto.getSlug() == null || dto.getSlug().isBlank()) {
-            return ResponseEntity.badRequest().body("slug is required");
-        }
-        String slug = dto.getSlug().trim();
-        if (repo.existsBySlug(slug)) {
-            return ResponseEntity.badRequest().body("slug already exists");
-        }
-
-        Article a = new Article();
-        a.setTitle(dto.getTitle());
-        a.setSlug(slug);
-        a.setContent(dto.getContent());
-        a.setCoverImageUrl(dto.getCoverImageUrl());
-        a.setPublished(dto.getPublished() != null && dto.getPublished());
-
-        return ResponseEntity.ok(repo.save(a));
+        return ResponseEntity.ok(articleService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public Article update(@PathVariable Long id, @RequestBody ArticleDto dto) {
-        Article a = repo.findById(id).orElseThrow();
-
-        if (dto.getTitle() != null) a.setTitle(dto.getTitle());
-        if (dto.getContent() != null) a.setContent(dto.getContent());
-        if (dto.getCoverImageUrl() != null) a.setCoverImageUrl(dto.getCoverImageUrl());
-        if (dto.getPublished() != null) a.setPublished(dto.getPublished());
-
-        if (dto.getSlug() != null) a.setSlug(dto.getSlug().trim());
-
-        return repo.save(a);
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticleDto dto) {
+        return ResponseEntity.ok(articleService.update(id, dto));
     }
 
     @PutMapping("/{id}/publish")
-    public Article publish(@PathVariable Long id) {
-        Article a = repo.findById(id).orElseThrow();
-        a.setPublished(true);
-        return repo.save(a);
+    public ResponseEntity<?> publish(@PathVariable Long id) {
+        return ResponseEntity.ok(articleService.publish(id));
     }
 
     @PutMapping("/{id}/unpublish")
-    public Article unpublish(@PathVariable Long id) {
-        Article a = repo.findById(id).orElseThrow();
-        a.setPublished(false);
-        return repo.save(a);
+    public ResponseEntity<?> unpublish(@PathVariable Long id) {
+        return ResponseEntity.ok(articleService.unpublish(id));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        repo.deleteById(id);
+        articleService.delete(id);
         return ResponseEntity.ok("Deleted");
     }
 }

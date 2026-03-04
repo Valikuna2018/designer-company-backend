@@ -1,7 +1,7 @@
 package com.example.designercompanybackend.controller;
 
 import com.example.designercompanybackend.model.Article;
-import com.example.designercompanybackend.repository.ArticleRepository;
+import com.example.designercompanybackend.service.ArticleService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,24 +11,19 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class ArticlePublicController {
 
-    private final ArticleRepository repo;
+    private final ArticleService articleService;
 
-    public ArticlePublicController(ArticleRepository repo) {
-        this.repo = repo;
+    public ArticlePublicController(ArticleService articleService) {
+        this.articleService = articleService;
     }
 
     @GetMapping
     public List<Article> listPublished() {
-        return repo.findByPublishedTrueOrderByCreatedAtDesc();
+        return articleService.listPublished();
     }
 
     @GetMapping("/{slug}")
     public Article getBySlug(@PathVariable String slug) {
-        Article a = repo.findBySlug(slug).orElseThrow();
-        if (!a.isPublished()) {
-            // hide unpublished from public
-            throw new RuntimeException("Article not found");
-        }
-        return a;
+        return articleService.getPublishedBySlug(slug);
     }
 }

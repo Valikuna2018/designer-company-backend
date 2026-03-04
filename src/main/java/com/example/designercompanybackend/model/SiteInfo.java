@@ -14,7 +14,7 @@ public class SiteInfo {
     private String keyName;   // HOME_TITLE, ABOUT_TEXT, CONTACT_PHONE, ...
 
     @Column(columnDefinition = "TEXT")
-    private String value;     // Georgian text is fine
+    private String value;
 
     public SiteInfo() {}
 

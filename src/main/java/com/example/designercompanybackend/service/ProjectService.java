@@ -16,10 +16,14 @@ public class ProjectService {
 
     private final ProjectRepository projectRepo;
     private final ProjectImageRepository imageRepo;
+    private final FileStorageService fileStorageService;
 
-    public ProjectService(ProjectRepository projectRepo, ProjectImageRepository imageRepo) {
+    public ProjectService(ProjectRepository projectRepo,
+                          ProjectImageRepository imageRepo,
+                          FileStorageService fileStorageService) {
         this.projectRepo = projectRepo;
         this.imageRepo = imageRepo;
+        this.fileStorageService = fileStorageService;
     }
 
     // Public
@@ -109,5 +113,17 @@ public class ProjectService {
     public void deleteImage(Long imageId) {
         if (!imageRepo.existsById(imageId)) throw new RuntimeException("Image not found");
         imageRepo.deleteById(imageId);
+    }
+
+    @Transactional
+    public ProjectImage uploadImage(Long projectId, org.springframework.web.multipart.MultipartFile file, Integer displayOrder) {
+        Project p = projectRepo.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        String fileUrl = fileStorageService.saveFile(file);
+        int order = (displayOrder != null) ? displayOrder : 0;
+
+        ProjectImage img = new ProjectImage(p, fileUrl, order);
+        return imageRepo.save(img);
     }
 }

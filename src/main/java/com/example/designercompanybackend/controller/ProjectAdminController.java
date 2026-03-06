@@ -1,5 +1,6 @@
 package com.example.designercompanybackend.controller;
 
+import org.springframework.web.multipart.MultipartFile;
 import com.example.designercompanybackend.dto.ProjectDto;
 import com.example.designercompanybackend.dto.ProjectImageDto;
 import com.example.designercompanybackend.model.Project;
@@ -62,5 +63,12 @@ public class ProjectAdminController {
     public ResponseEntity<?> deleteImage(@PathVariable Long imageId) {
         projectService.deleteImage(imageId);
         return ResponseEntity.ok("Deleted");
+    }
+
+    @PostMapping(value = "/{projectId}/upload-image", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadImage(@PathVariable Long projectId,
+                                         @RequestPart("file") MultipartFile file,
+                                         @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
+        return ResponseEntity.ok(projectService.uploadImage(projectId, file, displayOrder));
     }
 }

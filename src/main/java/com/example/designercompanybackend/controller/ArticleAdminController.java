@@ -1,12 +1,10 @@
 package com.example.designercompanybackend.controller;
 
 import com.example.designercompanybackend.dto.ArticleDto;
-import com.example.designercompanybackend.model.Article;
 import com.example.designercompanybackend.service.ArticleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/articles")
@@ -20,17 +18,18 @@ public class ArticleAdminController {
     }
 
     @GetMapping
-    public List<Article> listAll() {
-        return articleService.listAll();
+    public ResponseEntity<?> listAll() {
+        return ResponseEntity.ok(articleService.listAll());
     }
 
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody ArticleDto dto) {
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<?> create(@ModelAttribute ArticleDto dto) {
         return ResponseEntity.ok(articleService.create(dto));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ArticleDto dto) {
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<?> update(@PathVariable Long id,
+                                    @ModelAttribute ArticleDto dto) {
         return ResponseEntity.ok(articleService.update(id, dto));
     }
 

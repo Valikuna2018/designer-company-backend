@@ -4,6 +4,7 @@ import com.example.designercompanybackend.dto.ArticleDto;
 import com.example.designercompanybackend.model.Article;
 import com.example.designercompanybackend.repository.ArticleRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -11,13 +12,30 @@ import java.util.List;
 public class ArticleService {
 
     private final ArticleRepository repo;
+    private final FileStorageService fileStorageService;
 
-    public ArticleService(ArticleRepository repo) {
+    public ArticleService(ArticleRepository repo, FileStorageService fileStorageService) {
         this.repo = repo;
+        this.fileStorageService = fileStorageService;
     }
 
     public List<Article> listAll() {
         return repo.findAll();
+    }
+
+    public List<Article> listPublished() {
+        return repo.findByPublishedTrueOrderByCreatedAtDesc();
+    }
+
+    public Article getPublishedBySlug(String slug) {
+        Article article = repo.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
+
+        if (!article.isPublished()) {
+            throw new RuntimeException("Article not found");
+        }
+
+        return article;
     }
 
     public Article create(ArticleDto dto) {
@@ -26,67 +44,82 @@ public class ArticleService {
         }
 
         String slug = dto.getSlug().trim();
+
         if (repo.existsBySlug(slug)) {
             throw new RuntimeException("slug already exists");
         }
 
-        Article a = new Article();
-        a.setTitle(dto.getTitle());
-        a.setSlug(slug);
-        a.setContent(dto.getContent());
-        a.setCoverImageUrl(dto.getCoverImageUrl());
-        a.setPublished(dto.getPublished() != null && dto.getPublished());
+        Article article = new Article();
+        article.setTitle(dto.getTitle());
+        article.setSlug(slug);
+        article.setContent(dto.getContent());
+        article.setPublished(dto.getPublished() != null && dto.getPublished());
 
-        return repo.save(a);
+        MultipartFile coverImage = dto.getCoverImage();
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String fileUrl = fileStorageService.saveFile(coverImage);
+            article.setCoverImageUrl(fileUrl);
+        }
+
+        return repo.save(article);
     }
 
     public Article update(Long id, ArticleDto dto) {
-        Article a = repo.findById(id).orElseThrow(() -> new RuntimeException("Article not found"));
+        Article article = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
 
-        if (dto.getTitle() != null) a.setTitle(dto.getTitle());
-        if (dto.getContent() != null) a.setContent(dto.getContent());
-        if (dto.getCoverImageUrl() != null) a.setCoverImageUrl(dto.getCoverImageUrl());
-        if (dto.getPublished() != null) a.setPublished(dto.getPublished());
+        if (dto.getTitle() != null) {
+            article.setTitle(dto.getTitle());
+        }
+
+        if (dto.getContent() != null) {
+            article.setContent(dto.getContent());
+        }
+
+        if (dto.getPublished() != null) {
+            article.setPublished(dto.getPublished());
+        }
 
         if (dto.getSlug() != null && !dto.getSlug().isBlank()) {
             String newSlug = dto.getSlug().trim();
-            if (!newSlug.equals(a.getSlug()) && repo.existsBySlug(newSlug)) {
+
+            if (!newSlug.equals(article.getSlug()) && repo.existsBySlug(newSlug)) {
                 throw new RuntimeException("slug already exists");
             }
-            a.setSlug(newSlug);
+
+            article.setSlug(newSlug);
         }
 
-        return repo.save(a);
+        MultipartFile coverImage = dto.getCoverImage();
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String fileUrl = fileStorageService.saveFile(coverImage);
+            article.setCoverImageUrl(fileUrl);
+        }
+
+        return repo.save(article);
     }
 
     public Article publish(Long id) {
-        Article a = repo.findById(id).orElseThrow(() -> new RuntimeException("Article not found"));
-        a.setPublished(true);
-        return repo.save(a);
+        Article article = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
+
+        article.setPublished(true);
+        return repo.save(article);
     }
 
     public Article unpublish(Long id) {
-        Article a = repo.findById(id).orElseThrow(() -> new RuntimeException("Article not found"));
-        a.setPublished(false);
-        return repo.save(a);
+        Article article = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found"));
+
+        article.setPublished(false);
+        return repo.save(article);
     }
 
     public void delete(Long id) {
         if (!repo.existsById(id)) {
             throw new RuntimeException("Article not found");
         }
+
         repo.deleteById(id);
-    }
-
-    public List<Article> listPublished() {
-        return repo.findByPublishedTrueOrderByCreatedAtDesc();
-    }
-
-    public Article getPublishedBySlug(String slug) {
-        Article a = repo.findBySlug(slug).orElseThrow(() -> new RuntimeException("Article not found"));
-        if (!a.isPublished()) {
-            throw new RuntimeException("Article not found");
-        }
-        return a;
     }
 }

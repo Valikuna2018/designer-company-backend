@@ -8,6 +8,7 @@ import com.example.designercompanybackend.repository.ProjectImageRepository;
 import com.example.designercompanybackend.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,7 +27,6 @@ public class ProjectService {
         this.fileStorageService = fileStorageService;
     }
 
-    // Public
     public List<Project> listPublished() {
         return projectRepo.findByPublishedTrueOrderByCreatedAtDesc();
     }
@@ -41,7 +41,6 @@ public class ProjectService {
         return imageRepo.findByProjectIdOrderByDisplayOrderAsc(projectId);
     }
 
-    // Admin
     public List<Project> listAll() {
         return projectRepo.findAll();
     }
@@ -50,6 +49,7 @@ public class ProjectService {
         if (dto.getSlug() == null || dto.getSlug().isBlank()) {
             throw new RuntimeException("slug is required");
         }
+
         String slug = dto.getSlug().trim();
         if (projectRepo.existsBySlug(slug)) {
             throw new RuntimeException("slug already exists");
@@ -59,18 +59,23 @@ public class ProjectService {
         p.setTitle(dto.getTitle());
         p.setSlug(slug);
         p.setDescription(dto.getDescription());
-        p.setCoverImageUrl(dto.getCoverImageUrl());
         p.setPublished(dto.getPublished() != null && dto.getPublished());
+
+        MultipartFile coverImage = dto.getCoverImage();
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String fileUrl = fileStorageService.saveFile(coverImage);
+            p.setCoverImageUrl(fileUrl);
+        }
 
         return projectRepo.save(p);
     }
 
     public Project update(Long id, ProjectDto dto) {
-        Project p = projectRepo.findById(id).orElseThrow(() -> new RuntimeException("Project not found"));
+        Project p = projectRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
 
         if (dto.getTitle() != null) p.setTitle(dto.getTitle());
         if (dto.getDescription() != null) p.setDescription(dto.getDescription());
-        if (dto.getCoverImageUrl() != null) p.setCoverImageUrl(dto.getCoverImageUrl());
         if (dto.getPublished() != null) p.setPublished(dto.getPublished());
 
         if (dto.getSlug() != null && !dto.getSlug().isBlank()) {
@@ -79,6 +84,12 @@ public class ProjectService {
                 throw new RuntimeException("slug already exists");
             }
             p.setSlug(newSlug);
+        }
+
+        MultipartFile coverImage = dto.getCoverImage();
+        if (coverImage != null && !coverImage.isEmpty()) {
+            String fileUrl = fileStorageService.saveFile(coverImage);
+            p.setCoverImageUrl(fileUrl);
         }
 
         return projectRepo.save(p);
@@ -102,21 +113,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectImage addImage(Long projectId, ProjectImageDto dto) {
-        Project p = projectRepo.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
-        int order = (dto.getDisplayOrder() != null) ? dto.getDisplayOrder() : 0;
-
-        ProjectImage img = new ProjectImage(p, dto.getImageUrl(), order);
-        return imageRepo.save(img);
-    }
-
-    public void deleteImage(Long imageId) {
-        if (!imageRepo.existsById(imageId)) throw new RuntimeException("Image not found");
-        imageRepo.deleteById(imageId);
-    }
-
-    @Transactional
-    public ProjectImage uploadImage(Long projectId, org.springframework.web.multipart.MultipartFile file, Integer displayOrder) {
+    public ProjectImage uploadImage(Long projectId, MultipartFile file, Integer displayOrder) {
         Project p = projectRepo.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -125,5 +122,10 @@ public class ProjectService {
 
         ProjectImage img = new ProjectImage(p, fileUrl, order);
         return imageRepo.save(img);
+    }
+
+    public void deleteImage(Long imageId) {
+        if (!imageRepo.existsById(imageId)) throw new RuntimeException("Image not found");
+        imageRepo.deleteById(imageId);
     }
 }

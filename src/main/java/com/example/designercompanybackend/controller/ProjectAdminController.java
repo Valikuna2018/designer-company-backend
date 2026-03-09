@@ -1,15 +1,11 @@
 package com.example.designercompanybackend.controller;
 
-import org.springframework.web.multipart.MultipartFile;
 import com.example.designercompanybackend.dto.ProjectDto;
-import com.example.designercompanybackend.dto.ProjectImageDto;
-import com.example.designercompanybackend.model.Project;
 import com.example.designercompanybackend.model.ProjectImage;
 import com.example.designercompanybackend.service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/projects")
@@ -23,17 +19,18 @@ public class ProjectAdminController {
     }
 
     @GetMapping
-    public List<Project> listAll() {
-        return projectService.listAll();
+    public ResponseEntity<?> listAll() {
+        return ResponseEntity.ok(projectService.listAll());
     }
 
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody ProjectDto dto) {
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<?> create(@ModelAttribute ProjectDto dto) {
         return ResponseEntity.ok(projectService.create(dto));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProjectDto dto) {
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<?> update(@PathVariable Long id,
+                                    @ModelAttribute ProjectDto dto) {
         return ResponseEntity.ok(projectService.update(id, dto));
     }
 
@@ -53,9 +50,11 @@ public class ProjectAdminController {
         return ResponseEntity.ok("Deleted");
     }
 
-    @PostMapping("/{projectId}/images")
-    public ResponseEntity<?> addImage(@PathVariable Long projectId, @RequestBody ProjectImageDto dto) {
-        ProjectImage img = projectService.addImage(projectId, dto);
+    @PostMapping(value = "/{projectId}/upload-image", consumes = "multipart/form-data")
+    public ResponseEntity<?> uploadImage(@PathVariable Long projectId,
+                                         @RequestPart("file") MultipartFile file,
+                                         @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
+        ProjectImage img = projectService.uploadImage(projectId, file, displayOrder);
         return ResponseEntity.ok(img);
     }
 
@@ -63,12 +62,5 @@ public class ProjectAdminController {
     public ResponseEntity<?> deleteImage(@PathVariable Long imageId) {
         projectService.deleteImage(imageId);
         return ResponseEntity.ok("Deleted");
-    }
-
-    @PostMapping(value = "/{projectId}/upload-image", consumes = "multipart/form-data")
-    public ResponseEntity<?> uploadImage(@PathVariable Long projectId,
-                                         @RequestPart("file") MultipartFile file,
-                                         @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
-        return ResponseEntity.ok(projectService.uploadImage(projectId, file, displayOrder));
     }
 }

@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ProjectImageRepository extends JpaRepository<ProjectImage, Long> {
     List<ProjectImage> findByProjectIdOrderByDisplayOrderAsc(Long projectId);
+    void deleteByProjectId(Long projectId);
 }

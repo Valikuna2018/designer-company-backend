@@ -95,8 +95,13 @@ public class ProjectService {
         return projectRepo.save(p);
     }
 
+    @Transactional
     public void delete(Long id) {
-        if (!projectRepo.existsById(id)) throw new RuntimeException("Project not found");
+        if (!projectRepo.existsById(id)) {
+            throw new RuntimeException("Project not found");
+        }
+
+        imageRepo.deleteByProjectId(id);
         projectRepo.deleteById(id);
     }
 
